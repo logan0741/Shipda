@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 
 REQUIREMENTS_FILE = Path(__file__).resolve().parents[1] / "requirements.txt"
+PROJECT_ROOT = REQUIREMENTS_FILE.parent
 
 
 def parse_requirement(line: str) -> tuple[str, str | None] | None:
@@ -38,6 +40,16 @@ def main() -> int:
     mismatched: list[tuple[str, str, str]] = []
 
     print(f"Checking {REQUIREMENTS_FILE}")
+    print(f"Python executable: {sys.executable}")
+    print(f"Python version: {sys.version.split()[0]}")
+    print()
+
+    if "shipda" not in sys.executable.lower():
+        print("[WARN] This does not look like the conda environment `shipda`.")
+        print("Activate the environment first, then run this script again.")
+        print()
+
+    print("Required packages:")
     print()
 
     for line in REQUIREMENTS_FILE.read_text(encoding="utf-8").splitlines():
@@ -71,8 +83,26 @@ def main() -> int:
 
     if missing or mismatched:
         print("Requirements check failed.")
-        print("Install again with:")
+        print()
+
+        if missing:
+            print("Missing packages:")
+            for package_name in missing:
+                print(f"- {package_name}")
+
+        if mismatched:
+            print("Version mismatches:")
+            for package_name, expected_version, installed_version in mismatched:
+                print(
+                    f"- {package_name}: expected {expected_version}, "
+                    f"installed {installed_version}"
+                )
+
+        print()
+        print("Fix with:")
+        print(f"cd {PROJECT_ROOT}")
         print("python -m pip install -r requirements.txt")
+        print("python scripts/check_requirements.py")
         return 1
 
     print("All requirements are installed correctly.")

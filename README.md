@@ -100,15 +100,21 @@ python -m pip install -r requirements.txt
 
 ## 패키지 설치 확인
 
+체크 전에 설치를 먼저 실행해야 합니다. 설치하지 않은 상태에서 체크하면 `[MISSING]`이 정상적으로 뜹니다.
+
 ```powershell
+python -m pip install -r requirements.txt
 python scripts/check_requirements.py
 ```
 
 활성화 없이 확인:
 
 ```powershell
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" run -n shipda python -m pip install -r requirements.txt
 & "$env:USERPROFILE\anaconda3\Scripts\conda.exe" run -n shipda python scripts/check_requirements.py
 ```
+
+체크 출력의 `Python executable`이 `anaconda3\envs\shipda` 아래가 아니면 잘못된 Python으로 실행 중입니다.
 
 ## 서버 실행
 

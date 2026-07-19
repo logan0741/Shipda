@@ -148,15 +148,29 @@ python -m pip install -r requirements.txt
 
 ## 7. 설치 확인
 
+체크 전에 설치를 먼저 해야 합니다.
+
 ```powershell
+python -m pip install -r requirements.txt
 python scripts/check_requirements.py
 ```
 
 활성화 없이 확인:
 
 ```powershell
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" run -n shipda python -m pip install -r requirements.txt
 & "$env:USERPROFILE\anaconda3\Scripts\conda.exe" run -n shipda python scripts/check_requirements.py
 ```
+
+`[MISSING] fastapi` 또는 `[MISSING] uvicorn`이 뜨면 아직 현재 Python 환경에 패키지가 설치되지 않은 상태입니다.
+
+체크 출력에서 아래 경로를 확인합니다.
+
+```text
+Python executable: ...\anaconda3\envs\shipda\python.exe
+```
+
+다른 경로가 나오면 `shipda` 환경이 아닌 Python으로 체크하고 있는 것입니다.
 
 ## 8. 서버 실행
 
