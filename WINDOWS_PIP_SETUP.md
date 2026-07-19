@@ -1,134 +1,176 @@
-# Windows pip 초기 설정 가이드
+# Windows pip 및 conda 초기 설정 가이드
 
-Windows 환경에서 `pip` 명령어가 안 되거나 패키지 설치가 실패할 때 처음부터 확인하는 방법입니다.
+Windows에서 `pip` 설치가 실패하거나 `conda activate shipda`가 안 될 때 확인하는 절차입니다.
 
-이 프로젝트는 conda 환경 `shipda`를 기준으로 합니다. 다만 사용자의 PC 상태에 따라 Python 기본 설치 방식과 conda 방식이 다를 수 있으므로 둘 다 정리합니다.
+## 현재 오류 원인
 
-## 1. 먼저 확인할 것
-
-`cmd`를 새로 열고 아래 명령어를 실행합니다.
-
-```cmd
-python --version
-pip --version
-where python
-where pip
-```
-
-`python` 또는 `pip`가 인식되지 않으면 PATH 설정이 안 되었거나 Python 설치가 제대로 안 된 상태입니다.
-
-Windows에서는 `pip` 대신 아래처럼 실행하는 것이 더 안정적입니다.
-
-```cmd
-python -m pip --version
-python -m pip install -r requirements.txt
-```
-
-Python Launcher가 설치되어 있다면 아래 명령도 사용할 수 있습니다.
-
-```cmd
-py --version
-py -m pip --version
-py -m pip install -r requirements.txt
-```
-
-## 2. Python을 새로 설치하는 경우
-
-공식 사이트에서 Windows용 Python을 설치합니다.
-
-https://www.python.org/downloads/windows/
-
-설치 화면에서 반드시 아래 옵션을 체크합니다.
+아래 오류는 conda가 설치되지 않았다는 뜻이 아니라, 현재 PowerShell이 conda 명령을 찾지 못한다는 뜻입니다.
 
 ```text
-Add python.exe to PATH
+conda : 'conda' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다.
 ```
 
-설치 후 기존 `cmd` 창을 닫고 새 `cmd` 창을 엽니다.
+그 상태에서 아래 명령을 실행하면 conda 환경이 아니라 전역 Python에 설치됩니다.
 
-설치 확인:
-
-```cmd
-python --version
-python -m pip --version
+```powershell
+pip install -r requirements.txt
 ```
 
-pip 업그레이드:
+실제 로그에서는 `pip`가 아래 Python 3.8 환경을 사용하고 있었습니다.
 
-```cmd
-python -m pip install --upgrade pip
+```text
+C:\Users\logan\AppData\Local\Programs\Python\Python38
 ```
 
-## 3. pip가 없다고 나오는 경우
+Shipda는 conda 환경 `shipda`, Python 3.11 기준으로 맞춥니다.
 
-아래 명령으로 pip를 다시 활성화합니다.
+## 1. conda 설치 위치 확인
 
-```cmd
-python -m ensurepip --upgrade
-python -m pip install --upgrade pip
+PowerShell에서 아래 명령을 실행합니다.
+
+```powershell
+Test-Path "$env:USERPROFILE\anaconda3\Scripts\conda.exe"
+Test-Path "$env:USERPROFILE\miniconda3\Scripts\conda.exe"
 ```
 
-`py` 명령은 되는데 `python` 명령이 안 되면 아래처럼 실행합니다.
+`True`가 나오면 해당 위치에 conda가 설치되어 있습니다.
 
-```cmd
-py -m ensurepip --upgrade
-py -m pip install --upgrade pip
+현재 PC 기준 Anaconda 경로:
+
+```text
+C:\Users\logan\anaconda3
 ```
 
-## 4. conda 환경을 사용하는 경우
+## 2. PowerShell에서 즉시 conda 활성화
 
-Anaconda 또는 Miniconda가 설치되어 있다면 `Anaconda Prompt`를 열거나, conda가 PATH에 잡힌 `cmd`를 사용합니다.
+PowerShell에서 `conda`가 인식되지 않으면 먼저 conda hook을 실행합니다.
 
-conda 확인:
-
-```cmd
-conda --version
-conda env list
-```
-
-`shipda` 환경이 없다면 생성합니다.
-
-```cmd
-conda create -n shipda python=3.11 pip
-```
-
-환경 활성화:
-
-```cmd
+```powershell
+& "$env:USERPROFILE\anaconda3\shell\condabin\conda-hook.ps1"
 conda activate shipda
 ```
 
-프로젝트 폴더로 이동:
+정상 확인:
+
+```powershell
+python --version
+python -m pip --version
+```
+
+정상이라면 아래처럼 `shipda` 환경 경로가 보여야 합니다.
+
+```text
+Python 3.11.x
+...\anaconda3\envs\shipda\Lib\site-packages\pip
+```
+
+## 3. PowerShell conda 영구 초기화
+
+매번 hook 명령을 치지 않으려면 한 번만 초기화합니다.
+
+```powershell
+$env:PYTHONIOENCODING="utf-8"
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" init powershell
+```
+
+초기화 후 PowerShell을 완전히 닫고 새 PowerShell을 엽니다.
+
+```powershell
+conda activate shipda
+```
+
+초기화 후에도 `conda`가 안 잡히면 아래 방식으로 계속 실행합니다.
+
+```powershell
+& "$env:USERPROFILE\anaconda3\shell\condabin\conda-hook.ps1"
+conda activate shipda
+```
+
+## 4. cmd에서 conda 활성화
+
+`cmd`에서는 아래 명령을 사용합니다.
+
+```cmd
+C:\Users\logan\anaconda3\condabin\conda.bat activate shipda
+```
+
+프로젝트로 이동:
 
 ```cmd
 cd /d C:\Project\Shipda
 ```
 
-패키지 설치:
-
-```cmd
-python -m pip install -r requirements.txt
-```
-
-설치 확인:
+확인:
 
 ```cmd
 python --version
 python -m pip --version
-python -m pip show fastapi
-python -m pip show uvicorn
 ```
 
-## 5. Shipda 서버 실행
+## 5. shipda 환경이 없을 때 생성
 
-`shipda` 환경이 활성화된 상태에서 실행합니다.
+```powershell
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" create -y -n shipda python=3.11 pip
+```
 
-```cmd
-cd /d C:\Project\Shipda
+환경 목록 확인:
+
+```powershell
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" env list
+```
+
+## 6. 패키지 설치
+
+반드시 `shipda` 환경을 활성화한 뒤 설치합니다.
+
+```powershell
+conda activate shipda
+cd C:\Project\Shipda
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+PowerShell에서 `conda activate`가 안 되면:
+
+```powershell
+& "$env:USERPROFILE\anaconda3\shell\condabin\conda-hook.ps1"
+conda activate shipda
+cd C:\Project\Shipda
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+활성화 없이 바로 설치:
+
+```powershell
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" run -n shipda python -m pip install -r requirements.txt
+```
+
+## 7. 설치 확인
+
+```powershell
+python scripts/check_requirements.py
+```
+
+활성화 없이 확인:
+
+```powershell
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" run -n shipda python scripts/check_requirements.py
+```
+
+## 8. 서버 실행
+
+```powershell
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-브라우저에서 확인합니다.
+활성화 없이 실행:
+
+```powershell
+& "$env:USERPROFILE\anaconda3\Scripts\conda.exe" run -n shipda python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+확인 URL:
 
 ```text
 http://127.0.0.1:8000
@@ -136,88 +178,39 @@ http://127.0.0.1:8000/health
 http://127.0.0.1:8000/docs
 ```
 
-## 6. 자주 발생하는 문제
+## 9. 하지 말아야 할 명령
 
-### 'pip' is not recognized
+아래 명령은 잘못된 명령입니다.
 
-`pip` 명령이 PATH에 없는 상태입니다. 아래 명령을 사용합니다.
+```powershell
+pip conda activate shipda
+```
 
-```cmd
+`conda activate`는 pip 명령이 아닙니다.
+
+아래 명령도 conda 환경이 활성화되지 않은 상태에서는 사용하지 않습니다.
+
+```powershell
+pip install -r requirements.txt
+```
+
+대신 항상 아래처럼 실행합니다.
+
+```powershell
 python -m pip install -r requirements.txt
 ```
 
-그래도 안 되면 Python 설치 시 `Add python.exe to PATH`를 체크했는지 확인하고 Python을 재설치합니다.
+## 10. 빠른 해결 순서
 
-### 'python' is not recognized
+현재 PC에서 바로 해결하려면 PowerShell에 아래 순서대로 입력합니다.
 
-Python이 설치되지 않았거나 PATH에 등록되지 않은 상태입니다.
-
-해결 방법:
-
-```cmd
-py --version
-py -m pip --version
-```
-
-`py`도 안 되면 Python을 다시 설치합니다.
-
-### conda가 인식되지 않음
-
-일반 `cmd`가 아니라 `Anaconda Prompt`에서 실행합니다.
-
-또는 Anaconda 설치 경로가 아래와 비슷한지 확인합니다.
-
-```text
-C:\Users\사용자명\anaconda3
-C:\Users\사용자명\miniconda3
-```
-
-### 설치 중 권한 오류가 남
-
-전역 Python에 설치하지 말고 conda 환경 또는 venv 환경을 사용합니다.
-
-conda 권장:
-
-```cmd
+```powershell
+cd C:\Project\Shipda
+& "$env:USERPROFILE\anaconda3\shell\condabin\conda-hook.ps1"
 conda activate shipda
-python -m pip install -r requirements.txt
-```
-
-venv를 사용할 경우:
-
-```cmd
-python -m venv .venv
-.venv\Scripts\activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-### 여러 Python이 설치되어 충돌함
-
-현재 어떤 Python과 pip를 쓰는지 확인합니다.
-
-```cmd
-where python
-where pip
+python --version
 python -m pip --version
-```
-
-설치할 때는 `pip install ...` 대신 항상 아래 방식으로 실행합니다.
-
-```cmd
 python -m pip install -r requirements.txt
-```
-
-## 7. 권장 실행 순서
-
-처음 설정하는 팀원은 아래 순서대로 실행하면 됩니다.
-
-```cmd
-conda --version
-conda create -n shipda python=3.11 pip
-conda activate shipda
-cd /d C:\Project\Shipda
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python scripts/check_requirements.py
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
