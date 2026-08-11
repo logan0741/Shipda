@@ -1,0 +1,26 @@
+# 의존성 — README의 설치 명령으로 각자 받는다
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# 빌드 산출물
+dist/
+build/
+.expo/
+*.hbc
+
+# 로컬 데이터베이스 — 기기마다 다르고 시연 데이터가 들어간다
+*.db
+*.db-wal
+*.db-shm
+
+# 환경별 설정
+.env
+.env.local
+
+# OS / 편집기
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp

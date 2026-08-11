@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "쉽다",
+    "slug": "shipda",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "shipda",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shipda.demo",
+      "infoPlist": {
+        "NSCameraUsageDescription": "박스와 표시사항을 촬영해 체적과 HS Code를 산출하기 위해 카메라를 사용합니다.",
+        "NSMotionUsageDescription": "박스 촬영 각도(30~40도)를 안내하기 위해 기기 기울기 센서를 사용합니다."
+      }
+    },
+    "android": {
+      "package": "com.shipda.demo",
+      "adaptiveIcon": {
+        "backgroundColor": "#1E3A5C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "박스와 표시사항을 촬영해 체적과 HS Code를 산출하기 위해 카메라를 사용합니다."
+        }
+      ]
+    ],
+    "extra": {
+      "apiPort": 8000
+    }
+  }
+}
