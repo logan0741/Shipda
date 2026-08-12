@@ -13,6 +13,7 @@ import Svg, { Circle, Polygon } from 'react-native-svg';
 
 import { api, ApiError } from '../api/client';
 import { Analyzing } from '../components/Analyzing';
+import { ANGLE_MAX, ANGLE_MIN } from '../components/AngleGauge';
 import { AppHeader, Banner, Body, Button, Footer, Screen } from '../components/ui';
 import { useFlow } from '../state/FlowContext';
 import { colors, radius, spacing } from '../theme';
@@ -88,8 +89,11 @@ export default function CornerAdjustScreen() {
     setBusy(true);
     setError(null);
     try {
-      // 보정한 모서리를 반영해 다시 계산한다 (mock 서버는 고정 치수를 돌려준다)
-      const result = await api.predictCbm(productId, boxPhotoUri, 35, null);
+      // 보정한 모서리를 반영해 다시 계산한다 (mock 서버는 고정 치수를 돌려준다).
+      // 이 화면은 각도 센서를 다시 재지 않으므로, 서버의 각도 검증(60~70도)을
+      // 통과하는 중간값을 그대로 넘긴다.
+      const fallbackAngle = (ANGLE_MIN + ANGLE_MAX) / 2;
+      const result = await api.predictCbm(productId, boxPhotoUri, fallbackAngle, null);
       if (result.success && result.dimensions) {
         patch({ dimensions: result.dimensions, boxOverlay: result.overlay ?? null });
         navigation.replace('CbmResult');
