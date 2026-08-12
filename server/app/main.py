@@ -6,8 +6,8 @@
 AI 추론은 하지 않고, 시연 시나리오의 고정 결과를 돌려준다.
 `force_error` 파라미터로 예외 처리 화면을 의도적으로 띄울 수 있다.
 
-실행:
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+실행 (server/ 디렉터리에서):
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 """
 
 import asyncio
@@ -18,10 +18,8 @@ from fastapi import FastAPI, File, Form, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-import db
-import logistics
-import store
-from catalog import format_hs_code
+from . import db, logistics, store
+from .catalog import format_hs_code
 
 app = FastAPI(title="Shipda Mock API", version="1.0.0")
 
@@ -395,7 +393,7 @@ def select_hscode(product_id: str, body: HsSelectBody) -> dict[str, Any]:
     if chosen is None:
         raise HTTPException(status_code=422, detail="후보 목록에 없는 코드입니다.")
 
-    from catalog import split_hs_code
+    from .catalog import split_hs_code
 
     result = {
         **result,

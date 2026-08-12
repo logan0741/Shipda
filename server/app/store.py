@@ -12,8 +12,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import db
-from catalog import APPROVED, PRE_REVIEW, find_ruling, format_hs_code, split_hs_code
+from . import db
+from .catalog import APPROVED, PRE_REVIEW, find_ruling, format_hs_code, split_hs_code
 
 KST = timezone(timedelta(hours=9))
 

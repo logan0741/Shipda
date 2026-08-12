@@ -24,8 +24,10 @@ from typing import Any
 
 KST = timezone(timedelta(hours=9))
 
-# 환경변수로 위치를 바꿀 수 있게 둔다 (테스트에서 임시 파일을 쓰기 위함)
-DB_PATH = Path(os.environ.get("SHIPDA_DB") or Path(__file__).with_name("shipda.db"))
+# 환경변수로 위치를 바꿀 수 있게 둔다 (테스트에서 임시 파일을 쓰기 위함).
+# 기본 위치는 이 파일이 아니라 server/ 루트를 기준으로 잡는다 — app/ 서브패키지로
+# 옮겨지기 전부터 server/shipda.db에 쌓여있던 데이터를 그대로 이어서 쓰기 위함이다.
+DB_PATH = Path(os.environ.get("SHIPDA_DB") or Path(__file__).resolve().parent.parent / "shipda.db")
 
 _lock = threading.Lock()
 _conn: sqlite3.Connection | None = None

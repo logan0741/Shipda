@@ -70,7 +70,7 @@ python -m venv .venv
 ## 4. API 서버 실행 (터미널 1)
 
 ```bash
-.venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 아래처럼 나오면 성공입니다.
@@ -256,12 +256,14 @@ uk2/
 │       ├── format.ts           날짜·신뢰도·상태 표시 포맷
 │       └── theme.ts            색·간격·판정 상태 매핑
 ├── server/                     FastAPI 목업 서버
-│   ├── main.py                 엔드포인트 전체
-│   ├── db.py                   SQLite 연결·스키마·로그
-│   ├── store.py                화물 저장소
-│   ├── catalog.py              HS Code 판정 규칙
-│   ├── logistics.py            집하·혼재·출고·운영자 데이터
-│   └── smoke_test.py           전체 엔드포인트 점검
+│   ├── app/                    실제 패키지 (uvicorn app.main:app 으로 구동)
+│   │   ├── main.py             엔드포인트 전체
+│   │   ├── db.py               SQLite 연결·스키마·로그
+│   │   ├── store.py            화물 저장소
+│   │   ├── catalog.py          HS Code 판정 규칙
+│   │   └── logistics.py        집하·혼재·출고·운영자 데이터
+│   ├── shipda.db                SQLite 파일 (자동 생성, git 추적 안 함)
+│   └── smoke_test.py           전체 엔드포인트 점검 (server/ 루트에서 실행)
 ├── Shipda_기능명세서.md          기능 명세 + 변경 이력
 ├── HANDOVER.md                 현재까지의 작업 현황과 다음 과제
 └── README.md                   이 문서
@@ -269,7 +271,7 @@ uk2/
 
 ---
 
-## 12. 화면 흐름
+## 13. 화면 흐름
 
 ```
 홈 → 상품 정보 입력 → 운송장(마커) 준비 → 박스 촬영 → 체적 결과
@@ -281,7 +283,7 @@ AI 판정이 실패하거나 신뢰도가 낮으면 **모든 단계에서 직접
 
 ---
 
-## 13. 자주 쓰는 명령
+## 14. 자주 쓰는 명령
 
 앱 타입 검사:
 

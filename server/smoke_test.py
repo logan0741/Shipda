@@ -14,8 +14,7 @@ os.environ["SHIPDA_DB"] = str(_TEST_DB)
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-import db  # noqa: E402
-import main  # noqa: E402
+from app import db, main  # noqa: E402
 
 c = TestClient(main.app)
 IMG = {"image": ("photo.jpg", b"fake-bytes", "image/jpeg")}

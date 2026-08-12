@@ -65,13 +65,15 @@
 
 ### 3.2 서버 (`server/`) — FastAPI + SQLite
 
+`app/` 서브패키지 구조입니다(`uvicorn app.main:app`로 구동). `smoke_test.py`만 패키지 밖 `server/` 루트에 남아있고 `from app import db, main`으로 불러옵니다.
+
 | 파일 | 역할 |
 |---|---|
-| `main.py` | 엔드포인트 전체, 접근 로그 미들웨어 |
-| `db.py` | SQLite 연결·스키마·업무/접근 로그 |
-| `store.py` | 화물 저장소. dict를 고친 뒤 `save()`/`touch()`로 반영 |
-| `catalog.py` | HS Code 판정 규칙 (품목별 고정 결과) |
-| `logistics.py` | 집하·혼재·출고·운영자 데이터 |
+| `app/main.py` | 엔드포인트 전체, 접근 로그 미들웨어 |
+| `app/db.py` | SQLite 연결·스키마·업무/접근 로그 |
+| `app/store.py` | 화물 저장소. dict를 고친 뒤 `save()`/`touch()`로 반영 |
+| `app/catalog.py` | HS Code 판정 규칙 (품목별 고정 결과) |
+| `app/logistics.py` | 집하·혼재·출고·운영자 데이터 |
 | `smoke_test.py` | 전체 엔드포인트 + 영속성 + 로그 점검 |
 
 **DB 테이블 3개** — `products`(화물 상태, 중첩 결과는 JSON 컬럼), `events`(업무 로그), `request_logs`(HTTP 접근 로그)
@@ -136,6 +138,18 @@
 **방법**: `db.py`를 새로 만들고 `store.py`의 함수 시그니처는 그대로 둔 채 내부만 SQL로 교체했습니다. `touch()`가 저장까지 하도록 하고, `touch()`를 부르지 않던 `finalize`·`apply_logistics`에 `save()`를 넣었습니다.
 
 **부수 효과**: 집하 정보가 화물에 저장됩니다. 기존에는 `pickup_info()`가 상품과 무관한 고정 함수라 어느 화물로 조회해도 같은 값이 즉석 생성됐습니다. 이제 신청 시점의 배정(집하소·차량·시각·좌표)을 `logistics.pickup`에 보관하고 조회 시 저장된 값을 돌려줍니다.
+
+### 4.6 서버를 `server/app/` 서브패키지 구조로 재편
+
+**이유**: 같은 아이디어로 다른 팀원(logan0741)이 별도 GitHub 저장소에 FastAPI 스캐폴드를 만들어뒀습니다. 그쪽은 `uvicorn app.main:app`로 구동하는 패키지 구조였고(환경 세팅만 하고 실제 구현은 없는 빈 뼈대), 팀 관례를 맞추기 위해 우리 서버도 같은 구조로 옮겼습니다.
+
+**방법**: `server/main.py`·`db.py`·`store.py`·`catalog.py`·`logistics.py`를 `server/app/`로 옮기고 `__init__.py`를 추가했습니다. `catalog.py`·`logistics.py`·`db.py`는 로컬 모듈을 import하지 않아 내용 변경 없이 옮겼고, `main.py`·`store.py`는 `import db` 같은 평면 import를 `from . import db` 상대 import로 바꿨습니다. `smoke_test.py`는 패키지 밖 `server/` 루트에 그대로 두고 `from app import db, main`으로 불러옵니다.
+
+**주의해서 처리한 부분**: `db.py`의 `DB_PATH` 기본값이 `Path(__file__).with_name("shipda.db")`였는데, 이 파일이 `app/` 안으로 옮겨지면서 그대로 두면 DB 위치가 `server/shipda.db` → `server/app/shipda.db`로 조용히 바뀌어 **그동안 쌓인 시연 데이터가 고아가 될 뻔했습니다.** `Path(__file__).resolve().parent.parent / "shipda.db"`로 고쳐 기존 위치를 유지했고, 스모크 테스트로 재구조화 전후 `products` 건수가 그대로인 것을 확인했습니다.
+
+**실행 명령 변경**: `uvicorn main:app` → `uvicorn app.main:app` (server/ 디렉터리에서 실행하는 건 동일). README.md·HANDOVER.md·API.md를 함께 갱신했습니다.
+
+**로직 변경 없음**: 판정 규칙, API 계약, DB 스키마 전부 그대로입니다. 스모크 테스트 전체 통과로 확인했습니다.
 
 ---
 

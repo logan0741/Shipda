@@ -2,7 +2,7 @@
 
 프론트엔드(Expo 앱)와 백엔드(FastAPI) 사이의 계약을 정의합니다. **AI는 별도 서비스로 분리되어 있지 않습니다** — 이 문서의 "AI 계층" 절에서 이유와 실제 판정 로직의 위치를 설명합니다.
 
-- 서버 소스: [server/main.py](server/main.py)
+- 서버 소스: [server/app/main.py](server/app/main.py)
 - 프론트 타입 소스: [app/src/api/types.ts](app/src/api/types.ts), [app/src/api/client.ts](app/src/api/client.ts)
 - 실행 중 대화형 문서: `http://<서버>:8000/docs` (FastAPI가 자동 생성하는 Swagger UI)
 
@@ -13,21 +13,21 @@
 ## 1. 전체 구조
 
 ```
-┌─────────────────┐         HTTP / multipart          ┌──────────────────┐
-│   Expo 앱        │ ───────────────────────────────▶ │   FastAPI 서버     │
-│  (React Native)  │ ◀─────────────────────────────── │   (server/main.py)│
-└─────────────────┘         JSON                      └────────┬─────────┘
-                                                                 │
-                                                        ┌────────┴─────────┐
-                                                        │  store.py         │  화물 상태 CRUD
-                                                        │  catalog.py       │  HS Code 판정 규칙 (= AI 계층)
-                                                        │  logistics.py     │  집하·혼재·출고·운영자 데이터
-                                                        │  db.py            │  SQLite 영속화 + 로그
-                                                        └───────────────────┘
-                                                                 │
-                                                        ┌────────┴─────────┐
-                                                        │  shipda.db (SQLite)│
-                                                        └───────────────────┘
+┌─────────────────┐        HTTP / multipart         ┌───────────────────────┐
+│   Expo 앱         │ ──────────────────────────────▶ │   FastAPI 서버          │
+│  (React Native)  │ ◀────────────────────────────── │ (server/app/main.py)  │
+└─────────────────┘             JSON                 └───────────┬───────────┘
+                                                                   │
+                                                        ┌──────────┴───────────┐
+                                                        │  app/store.py        │  화물 상태 CRUD
+                                                        │  app/catalog.py      │  HS Code 판정 규칙 (= AI 계층)
+                                                        │  app/logistics.py    │  집하·혼재·출고·운영자 데이터
+                                                        │  app/db.py           │  SQLite 영속화 + 로그
+                                                        └──────────┬───────────┘
+                                                                   │
+                                                        ┌──────────┴───────────┐
+                                                        │  shipda.db (SQLite)  │
+                                                        └───────────────────────┘
 ```
 
 세 계층입니다.
@@ -532,30 +532,30 @@ src/api/types.ts    ─ 요청/응답 TypeScript 타입 (본 문서 3절과 1:1 
 ## 5. 백엔드 — 저장 계층
 
 ```
-main.py (엔드포인트)
+app/main.py (엔드포인트)
    │  product["hscode_result"] = result
    │  store.touch(product)          ← 상태 갱신 + DB 저장을 한 번에
    ▼
-store.py (dict ↔ SQL 변환)
+app/store.py (dict ↔ SQL 변환)
    │  save(product)
    ▼
-db.py (SQLite 연결, 스키마, 로그)
+app/db.py (SQLite 연결, 스키마, 로그)
    ▼
 shipda.db
 ```
 
 엔드포인트 핸들러는 `product`를 평범한 dict처럼 다루다가, 변경이 끝나면 `store.touch(product)`(수정시각 갱신 + `draft`→`in_progress` 승격 + 저장을 한 번에) 또는 `store.save(product)`(그대로 저장만)를 호출합니다. 호출을 빼먹으면 메모리상의 dict만 바뀌고 DB에는 반영되지 않습니다 — 새 엔드포인트를 추가할 때 주의할 지점입니다.
 
-`hscode_result`, `cbm_result`, `logistics` 세 필드는 중첩 구조라 SQLite에는 JSON 텍스트 컬럼으로 저장하고, 읽고 쓸 때 `store.py`가 자동으로 직렬화/역직렬화합니다.
+`hscode_result`, `cbm_result`, `logistics` 세 필드는 중첩 구조라 SQLite에는 JSON 텍스트 컬럼으로 저장하고, 읽고 쓸 때 `app/store.py`가 자동으로 직렬화/역직렬화합니다.
 
 ---
 
 ## 6. AI 계층 — 왜 별도 서비스가 아닌가
 
-**이 프로젝트에는 실제 AI 추론 서버가 없습니다.** `catalog.py`가 그 역할을 대신하는 **규칙 기반 목업**입니다.
+**이 프로젝트에는 실제 AI 추론 서버가 없습니다.** `app/catalog.py`가 그 역할을 대신하는 **규칙 기반 목업**입니다.
 
 ```python
-# catalog.py
+# app/catalog.py
 RULINGS = [
     {
         "keywords": ["떡갈비", "갈비", "밀키트"],
@@ -568,7 +568,7 @@ RULINGS = [
 ]
 ```
 
-`find_ruling(product_name)`이 상품명에 포함된 키워드로 목록을 매칭해 미리 정해둔 판정 결과를 돌려줍니다. 매칭되는 항목이 없으면 기본 판정으로 대체합니다. `store.build_hscode_result()`가 이 결과를 API 응답 형태로 감싸고, 원재료 함량 누락 같은 예외 규칙을 적용합니다.
+`find_ruling(product_name)`이 상품명에 포함된 키워드로 목록을 매칭해 미리 정해둔 판정 결과를 돌려줍니다. 매칭되는 항목이 없으면 기본 판정으로 대체합니다. `app/store.py`의 `build_hscode_result()`가 이 결과를 API 응답 형태로 감싸고, 원재료 함량 누락 같은 예외 규칙을 적용합니다.
 
 **시연 목적상 이렇게 설계했습니다.**
 
@@ -576,13 +576,13 @@ RULINGS = [
 - 같은 상품명이면 항상 같은 결과가 나와 시연 재현성이 보장된다
 - `force_error` 파라미터로 실패 상황을 원하는 타이밍에 정확히 재현할 수 있다 — 실제 AI라면 이 제어가 불가능하다
 
-**실제 서비스로 전환한다면** `store.build_hscode_result()`와 `POST /product/{id}/hscode/predict` 핸들러 안의 `catalog.find_ruling()` 호출을 실제 모델 추론(비전 모델로 표시사항 OCR → LLM 또는 분류기로 HS Code 판정)으로 교체하는 지점입니다. 그 경우:
+**실제 서비스로 전환한다면** `app/store.py`의 `build_hscode_result()`와 `POST /product/{id}/hscode/predict` 핸들러 안의 `catalog.find_ruling()` 호출을 실제 모델 추론(비전 모델로 표시사항 OCR → LLM 또는 분류기로 HS Code 판정)으로 교체하는 지점입니다. 그 경우:
 
 - 요청/응답 스키마(3.4절)는 그대로 유지하면 프론트엔드는 수정할 필요가 없습니다
 - `confidence`, `alternatives`, `status` 3단계 강등 로직은 실제 모델의 출력 신뢰도에 맞춰 재정의해야 합니다
 - 이미지가 현재는 저장되지 않고 버려집니다(`await image.read()`만 하고 폐기) — 실제 모델 연동 시 저장소(S3 등)와 비동기 추론 큐가 필요합니다
 
-CBM(체적) 측정도 마찬가지 구조입니다. `POST /product/{id}/cbm/predict`는 실제 컴퓨터 비전 없이 `store.DEMO_DIMENSIONS`(고정값 600×450×400mm)를 돌려줍니다. `device_angle`만 실제로 검사해 각도 조건을 재현합니다.
+CBM(체적) 측정도 마찬가지 구조입니다. `POST /product/{id}/cbm/predict`는 실제 컴퓨터 비전 없이 `app/store.py`의 `DEMO_DIMENSIONS`(고정값 600×450×400mm)를 돌려줍니다. `device_angle`만 실제로 검사해 각도 조건을 재현합니다.
 
 > 참고: 이 프로젝트는 한때 서버 측 OpenCV로 실시간 상자 윤곽 검출을 구현했다가 실물 환경에서 정확도가 부족해 철회했습니다. 자세한 경위는 [Shipda_기능명세서.md](Shipda_기능명세서.md)의 "변경 이력 5"를 참고하세요.
 
