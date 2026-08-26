@@ -1,38 +1,36 @@
-# Byte-compiled files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environments
+# 의존성 — README의 설치 명령으로 각자 받는다
+node_modules/
 .venv/
-venv/
-env/
-ENV/
-.conda/
+__pycache__/
+*.pyc
 
-# Distribution / packaging
-build/
+# 빌드 산출물
 dist/
-*.egg-info/
+build/
+.expo/
+*.hbc
 
-# Test and coverage output
-.pytest_cache/
-.coverage
-htmlcov/
+# 로컬 데이터베이스 — 기기마다 다르고 시연 데이터가 들어간다
+*.db
+*.db-wal
+*.db-shm
 
-# Logs and local environment files
-*.log
+# 환경별 설정
 .env
-.env.*
-!.env.example
+.env.local
 
-# Jupyter
-.ipynb_checkpoints/
-
-# IDE / editor files
-.idea/
-.vscode/
-
-# OS files
+# OS / 편집기
 .DS_Store
 Thumbs.db
+desktop.ini
+*.swp
+
+# 로컬 실행 로그 (분리 실행 시 생성)
+server/server.log
+server/server.log.err
+
+# 서버 실행 로그 — 기기마다 다르고 시연 중에 계속 쌓인다
+server/server.log*
+server/server.err
+server/server.out
+server/*.log2*
